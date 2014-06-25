@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        id="com.cloudfiveapp.push" version="0.0.1">
+    <name>CloudFivePush</name>
+    <description>Cloud Five Push notification plugin</description>
+    <license>MIT</license>
+    <keywords>push,notifications,aps,gcm</keywords>
+    <js-module src="www/CloudFivePush.js" name="CloudFivePush">
+        <clobbers target="window.CloudFivePush" />
+    </js-module>
+    <platform name="ios">
+        <config-file target="config.xml" parent="/*">
+            <feature name="CloudFivePush">
+                <param name="ios-package" value="CloudFivePush"/>
+            </feature>
+        </config-file>
+        <header-file src="src/ios/CloudFivePush.h" />
+        <source-file src="src/ios/CloudFivePush.m" />
+        <source-file src="src/ios/AppDelegate+notification.m" />
+        <header-file src="src/ios/AppDelegate+notification.h" />
+        <resource-file src="resources/engage.aiff" />
+    </platform>
+</plugin>

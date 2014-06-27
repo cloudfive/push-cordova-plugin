@@ -8,6 +8,7 @@
     <js-module src="www/CloudFivePush.js" name="CloudFivePush">
         <clobbers target="window.CloudFivePush" />
     </js-module>
+
     <platform name="ios">
         <config-file target="config.xml" parent="/*">
             <feature name="CloudFivePush">
@@ -20,4 +21,43 @@
         <header-file src="src/ios/AppDelegate+notification.h" />
         <resource-file src="resources/engage.aiff" />
     </platform>
+
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="CloudFivePush" >
+                <param name="android-package" value="com.cloudfiveapp.cordova.plugins.push.CloudFivePush"/>
+                <param name="gcmSenderId" value="6610000000" />
+            </feature>
+             <!-- Replace this with your GCM sender ID from the google developer console -->
+        </config-file>
+
+        <source-file src="src/android/CloudFivePush.java" target-dir="src/com/cloudfiveapp/cordova/plugins/push" />
+        <source-file src="src/android/CloudFiveBroadcastReceiver.java" target-dir="src/com/cloudfiveapp/cordova/plugins/push" />
+        <source-file src="src/android/PushHandlerActivity.java" target-dir="src/com/cloudfiveapp/cordova/plugins/push" />
+        <source-file src="src/android/GCMIntentService.java" target-dir="src/com/cloudfiveapp/cordova/plugins/push" />
+        <!-- <source-file src="src/android/notification.png" target-dir="res/drawable" /> -->
+        <source-file src="src/android/libs/gcm.jar" target-dir="libs" />
+
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+            <uses-permission android:name="android.permission.WAKE_LOCK" />
+            <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
+
+            <permission android:name="$PACKAGE_NAME.permission.C2D_MESSAGE" android:protectionLevel="signature" />
+            <uses-permission android:name="$PACKAGE_NAME.permission.C2D_MESSAGE" />
+            <activity android:name="com.cloudfiveapp.cordova.plugins.push.PushHandlerActivity"/>
+        </config-file>
+
+        <config-file target="AndroidManifest.xml" parent="/manifest/application">
+            <receiver android:name="com.cloudfiveapp.cordova.plugins.push.CloudFiveBroadcastReceiver" android:permission="com.google.android.c2dm.permission.SEND" >
+                <intent-filter>
+                    <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                    <action android:name="com.google.android.c2dm.intent.REGISTRATION" />
+                    <category android:name="$PACKAGE_NAME" />
+                </intent-filter>
+            </receiver>
+            <service android:name="com.cloudfiveapp.cordova.plugins.push.GCMIntentService" />
+        </config-file>      
+     </platform>      
 </plugin>

@@ -169,7 +169,7 @@ public class GCMIntentService extends GCMBaseIntentService {
   
   public void notifyCloudFive(Context context, String registrationId) {
 	  HttpClient httpclient = new DefaultHttpClient();
-	  HttpPost httppost = new HttpPost("http://192.168.0.129:3000/push/register");
+	  HttpPost httppost = new HttpPost("https://www.cloudfiveapp.com/push/register");
 
 	  try {
 		  // Add your data

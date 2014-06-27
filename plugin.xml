@@ -26,9 +26,7 @@
         <config-file target="res/xml/config.xml" parent="/*">
             <feature name="CloudFivePush" >
                 <param name="android-package" value="com.cloudfiveapp.cordova.plugins.push.CloudFivePush"/>
-                <param name="gcmSenderId" value="6610000000" />
             </feature>
-             <!-- Replace this with your GCM sender ID from the google developer console -->
         </config-file>
 
         <source-file src="src/android/CloudFivePush.java" target-dir="src/com/cloudfiveapp/cordova/plugins/push" />
@@ -46,7 +44,6 @@
 
             <permission android:name="$PACKAGE_NAME.permission.C2D_MESSAGE" android:protectionLevel="signature" />
             <uses-permission android:name="$PACKAGE_NAME.permission.C2D_MESSAGE" />
-            <activity android:name="com.cloudfiveapp.cordova.plugins.push.PushHandlerActivity"/>
         </config-file>
 
         <config-file target="AndroidManifest.xml" parent="/manifest/application">
@@ -57,7 +54,12 @@
                     <category android:name="$PACKAGE_NAME" />
                 </intent-filter>
             </receiver>
+            <activity android:name="com.cloudfiveapp.cordova.plugins.push.PushHandlerActivity"/>
             <service android:name="com.cloudfiveapp.cordova.plugins.push.GCMIntentService" />
-        </config-file>      
-     </platform>      
+        </config-file>
+     </platform>
+     <!--
+        <gcmSenderId>12345</gcmSenderId>
+        Replace this with your GCM sender ID from the google developer console and put it in your main config.xml
+     -->
 </plugin>

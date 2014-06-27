@@ -106,7 +106,7 @@ public class CloudFivePush extends CordovaPlugin {
 		Log.v(TAG, "sendJavascript: " + _d);
 
 		if (gECB != null && gWebView != null) {
-			gWebView.sendJavascript(_d); 
+			gWebView.sendJavascript(_d);
 		}
 	}
 
@@ -167,7 +167,7 @@ public class CloudFivePush extends CordovaPlugin {
 			 while (it.hasNext())
 			 {
 				 String key = it.next();
-				 Object value = extras.get(key); 
+				 Object value = extras.get(key);
 
 				 // System data from Android
 				 if (key.equals("from") || key.equals("collapse_key"))
@@ -232,8 +232,8 @@ public class CloudFivePush extends CordovaPlugin {
 		 catch( JSONException e)
 		 {
 			 Log.e(TAG, "extrasToJSON: JSON exception");
-		 }         
-		 return null;        
+		 }
+		 return null;
 	 }
 
 	 public static boolean isInForeground()
@@ -258,17 +258,15 @@ public class CloudFivePush extends CordovaPlugin {
 		 int id = getApplicationContext().getResources().getIdentifier("config", "xml", getApplicationContext().getPackageName());
 		 XmlResourceParser xrp = getApplicationContext().getResources().getXml(id);
 		 int eventType;
+		 boolean inSenderTag = false;
 		 try {
 			 eventType = xrp.getEventType();
-			 boolean insideFeature = false;
 			 while (eventType != XmlPullParser.END_DOCUMENT)
 			 {
 				 if ( eventType == XmlPullParser.START_TAG) {
-					 if ( xrp.getName().equals("feature") && 
-							 xrp.getAttributeValue(null, "name").equals("CloudFivePush") ) {
-						 insideFeature = true;
-					 }else if (insideFeature && xrp.getName().equals("param") && xrp.getAttributeValue(null, "name").equals("gcmSenderId")) {
-						 return xrp.getAttributeValue(null, "value");
+					 if (xrp.getName().equals("gcmSenderId")) {
+						 xrp.next();
+						 return xrp.getText();
 					 }
 				 }
 				 eventType = xrp.next();

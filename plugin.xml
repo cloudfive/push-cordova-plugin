@@ -58,8 +58,8 @@
                     <category android:name="$PACKAGE_NAME" />
                 </intent-filter>
             </receiver>
-            <service android:name="com.cloudfiveapp.cordova.plugins.push.GCMIntentService" />
             <activity android:name="com.cloudfiveapp.cordova.plugins.push.PushHandlerActivity"/>
-        </config-file>      
-     </platform>      
+            <service android:name="com.cloudfiveapp.cordova.plugins.push.GCMIntentService" />
+        </config-file>
+    </platform>
 </plugin>

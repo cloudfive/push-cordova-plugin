@@ -106,7 +106,7 @@ public class CloudFivePush extends CordovaPlugin {
 		Log.v(TAG, "sendJavascript: " + _d);
 
 		if (gECB != null && gWebView != null) {
-			gWebView.sendJavascript(_d); 
+			gWebView.sendJavascript(_d);
 		}
 	}
 
@@ -167,7 +167,7 @@ public class CloudFivePush extends CordovaPlugin {
 			 while (it.hasNext())
 			 {
 				 String key = it.next();
-				 Object value = extras.get(key); 
+				 Object value = extras.get(key);
 
 				 // System data from Android
 				 if (key.equals("from") || key.equals("collapse_key"))
@@ -232,8 +232,8 @@ public class CloudFivePush extends CordovaPlugin {
 		 catch( JSONException e)
 		 {
 			 Log.e(TAG, "extrasToJSON: JSON exception");
-		 }         
-		 return null;        
+		 }
+		 return null;
 	 }
 
 	 public static boolean isInForeground()

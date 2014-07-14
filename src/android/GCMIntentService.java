@@ -1,29 +1,13 @@
 package com.cloudfiveapp.cordova.plugins.push;
 
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 
 import com.google.android.gcm.GCMBaseIntentService;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -41,6 +25,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.provider.Settings.Secure;
 //import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
@@ -86,27 +71,27 @@ public class GCMIntentService extends GCMBaseIntentService {
 
   @Override
   protected void onMessage(Context context, Intent intent) {
-	  Log.d(TAG, "onMessage - context: " + context);
+    Log.d(TAG, "onMessage - context: " + context);
 
-	  // Extract the payload from the message
-	  Bundle extras = intent.getExtras();
-	  if (extras != null)
-	  {
-		  String alert = extras.getString("alert");
-		  if (alert != null) {
-			  createNotification(context, extras);
-		  }
-		  
-		  // if we are in the foreground, just surface the payload, else post it to the statusbar
-		  if (CloudFivePush.isInForeground()) {
-			  extras.putBoolean("foreground", true);
-			  CloudFivePush.sendExtras(extras);
-		  } else {
-			  extras.putBoolean("foreground", false);
-			  // Send a notification if there is a message
-		
-		  }
-	  }
+    // Extract the payload from the message
+    Bundle extras = intent.getExtras();
+    if (extras != null)
+    {
+      String alert = extras.getString("alert");
+      if (alert != null) {
+        createNotification(context, extras);
+      }
+      
+      // if we are in the foreground, just surface the payload, else post it to the statusbar
+      if (CloudFivePush.isInForeground()) {
+        extras.putBoolean("foreground", true);
+        CloudFivePush.sendExtras(extras);
+      } else {
+        extras.putBoolean("foreground", false);
+        // Send a notification if there is a message
+    
+      }
+    }
   }
 
   public void createNotification(Context context, Bundle extras)
@@ -120,6 +105,14 @@ public class GCMIntentService extends GCMBaseIntentService {
 
     PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
+
+    String message = extras.getString("message");
+    String alert = extras.getString("alert");
+    if (message == null) {
+      message = alert;
+      alert = GCMIntentService.getAppName(context);
+    }
+    
 //    NotificationCompat.Builder mBuilder =
 //      new NotificationCompat.Builder(context)
     Notification.Builder mBuilder =
@@ -127,16 +120,11 @@ public class GCMIntentService extends GCMBaseIntentService {
         .setDefaults(Notification.DEFAULT_ALL)
         .setSmallIcon(context.getApplicationInfo().icon)
         .setWhen(System.currentTimeMillis())
-        .setContentTitle(extras.getString("alert"))
-        .setTicker(extras.getString("alert"))
+        .setContentTitle(alert)
+        .setTicker(alert)
         .setContentIntent(contentIntent);
 
-    String message = extras.getString("message");
-    if (message != null) {
-      mBuilder.setContentText(message);
-    } else {
-      mBuilder.setContentText("<missing message content>");
-    }
+    mBuilder.setContentText(message);
 
     String msgcnt = extras.getString("msgcnt");
     if (msgcnt != null) {
@@ -168,39 +156,38 @@ public class GCMIntentService extends GCMBaseIntentService {
   }
   
   public void notifyCloudFive(Context context, String registrationId) {
-	  HttpClient httpclient = new DefaultHttpClient();
-	  HttpPost httppost = new HttpPost("https://www.cloudfiveapp.com/push/register");
+    HttpClient httpclient = new DefaultHttpClient();
+    HttpPost httppost = new HttpPost("https://www.cloudfiveapp.com/push/register");
 
-	  try {
-		  // Add your data
-		  List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-		  //:device_token, :device_model, :device_name, :device_version, :app_version
-		  nameValuePairs.add(new BasicNameValuePair("device_token", registrationId));
-		  nameValuePairs.add(new BasicNameValuePair("package_name", context.getPackageName() ));
-		  nameValuePairs.add(new BasicNameValuePair("device_model", android.os.Build.MODEL));
-		  nameValuePairs.add(new BasicNameValuePair("device_name", android.os.Build.DISPLAY));
-		  nameValuePairs.add(new BasicNameValuePair("device_version", android.os.Build.VERSION.RELEASE));
-		  nameValuePairs.add(new BasicNameValuePair("device_identifier", Settings.Secure.ANDROID_ID));
-		  nameValuePairs.add(new BasicNameValuePair("device_platform", "android"));
-		  nameValuePairs.add(new BasicNameValuePair("user_identifier", CloudFivePush.getUserIdentifier()));
-		  
-		  String version;
-		  try {
-			  version = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
-		  } catch (NameNotFoundException e) {
-			  version = "unknown";
-		  }
-		  nameValuePairs.add(new BasicNameValuePair("app_version", version));
-		  httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-		  HttpResponse response = httpclient.execute(httppost);
-	  } catch (ClientProtocolException e) {
-		  // TODO Auto-generated catch block
-	  } catch (IOException e) {
-		  // TODO Auto-generated catch block
-		  Log.w(TAG, "Unable to register with cloud five: " + e.getMessage());
-		  e.printStackTrace();
+    try {
+      // Add your data
+      List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
+      //:device_token, :device_model, :device_name, :device_version, :app_version
+      nameValuePairs.add(new BasicNameValuePair("device_token", registrationId));
+      nameValuePairs.add(new BasicNameValuePair("package_name", context.getPackageName() ));
+      nameValuePairs.add(new BasicNameValuePair("device_model", android.os.Build.MODEL));
+      nameValuePairs.add(new BasicNameValuePair("device_name", android.os.Build.DISPLAY));
+      nameValuePairs.add(new BasicNameValuePair("device_version", android.os.Build.VERSION.RELEASE));
+      nameValuePairs.add(new BasicNameValuePair("device_identifier", Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID)));
+      nameValuePairs.add(new BasicNameValuePair("device_platform", "android"));
+      nameValuePairs.add(new BasicNameValuePair("user_identifier", CloudFivePush.getUserIdentifier()));
+      
+      String version;
+      try {
+        version = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+      } catch (NameNotFoundException e) {
+        version = "unknown";
+      }
+      nameValuePairs.add(new BasicNameValuePair("app_version", version));
+      httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+      HttpResponse response = httpclient.execute(httppost);
+    } catch (ClientProtocolException e) {
+      // TODO Auto-generated catch block
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      Log.w(TAG, "Unable to register with cloud five: " + e.getMessage());
+      e.printStackTrace();
 
-	  }
+    }
   }
- 
 }

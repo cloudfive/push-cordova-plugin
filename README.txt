@@ -1,13 +1,13 @@
 === Cloud Five Push ===
 == Cordova/Phonegap plugin ==
  
- This is a phonegap plugin that makes integration with Cloud Five Push extremely simple. It was designed on Phonegap 3.5 but it probably works on lower versions. 
+ This is a phonegap plugin that makes integration with Cloud Five Push extremely simple. It was designed on Phonegap 3.5 but it probably works on lower versions down to 3.0. 
 
 == Installation ==
 
 The plugin conforms to plugman standards so installation is easy: 
 
-    $ cordova plugin install https://github.com/tenforwardconsulting/cloud-five-push-plugin.git
+    $ cordova plugin add https://github.com/tenforwardconsulting/cloud-five-push-plugin.git
 
 To register/activate push notifications all you need to do is put this in your javascript:
     
@@ -17,15 +17,26 @@ Where `user-identifier` is something like
 
 This will register the user anonymously which is useful if you only need to send occasionally "broadcast" messages to your entire userbase.  This probably isn't 
 
+== Removal == 
+
+To remove this plugin, simply execute 
+    
+    $ cordova plugin remove com.cloudfiveapp.push
+
 
 == Setup for Apple ==
 
 == Setup for Android == 
 
-http://developer.android.com/google/gcm/gs.html
+This best reference for instructions are here: http://developer.android.com/google/gcm/gs.html  Briefly, the steps are: 
 
-Open the Google Developers Console. - https://cloud.google.com/console
-Create/select your project and enable cloud messaging
+  * Open the Google Developers Console. - https://cloud.google.com/console
+
+  * Create/select your project and enable cloud messaging
+
+  * Create an API key
+
+  * put your SenderID (project number) in the <gcmSenderId> tag in config.xml and re-run `cordova prepare android`
 
 
 ==LICENSE == 

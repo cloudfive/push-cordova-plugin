@@ -1,17 +1,8 @@
 var exec = require("cordova/exec");
 module.exports = {
-  alert: function() {
-    exec(function() {alert('success')}, 
-                 function() {alert('failure')},
-                  'CloudFivePush', 
-                  'alert', 
-                  []
-                );  
-  },
-
   register: function(userIdentifier) {
-    exec(function() {alert('successfully registered')}, 
-                 function() {alert('failed to register')},
+    exec(function() { console.log("Succesfully registered for Cloud Five Push") }, 
+                 function() { console.log("Failed to register for push notifications")},
                   'CloudFivePush', 
                   'register', 
                   [userIdentifier]

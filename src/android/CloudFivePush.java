@@ -255,32 +255,29 @@ public class CloudFivePush extends CordovaPlugin {
 	 }
 
 	 private String getGcmSenderId() {
-		 int id = getApplicationContext().getResources().getIdentifier("config", "xml", getApplicationContext().getPackageName());
-		 XmlResourceParser xrp = getApplicationContext().getResources().getXml(id);
-		 int eventType;
-		 try {
-			 eventType = xrp.getEventType();
-			 boolean insideFeature = false;
-			 while (eventType != XmlPullParser.END_DOCUMENT)
-			 {
-				 if ( eventType == XmlPullParser.START_TAG) {
-					 if ( xrp.getName().equals("feature") && 
-							 xrp.getAttributeValue(null, "name").equals("CloudFivePush") ) {
-						 insideFeature = true;
-					 }else if (insideFeature && xrp.getName().equals("param") && xrp.getAttributeValue(null, "name").equals("gcmSenderId")) {
-						 return xrp.getAttributeValue(null, "value");
-					 }
-				 }
-				 eventType = xrp.next();
-			 }
-		 } catch (XmlPullParserException e) {
+	 	int id = getApplicationContext().getResources().getIdentifier("config", "xml", getApplicationContext().getPackageName());
+	 	XmlResourceParser xrp = getApplicationContext().getResources().getXml(id);
+	 	int eventType;
+	 	try {
+	 		eventType = xrp.getEventType();
+	 		while (eventType != XmlPullParser.END_DOCUMENT)
+	 		{
+	 			if ( eventType == XmlPullParser.START_TAG) {
+	 				if ( xrp.getName().equals("gcmSenderId") ) { 
+	 					xrp.next();
+	 					return xrp.getText();
+	 				}
+	 			}
+	 			eventType = xrp.next();
+	 		}
+	 	} catch (XmlPullParserException e) {
 			 // TODO Auto-generated catch block
-			 e.printStackTrace();
-		 } catch (IOException e) {
+	 		e.printStackTrace();
+	 	} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		 return "123";
+	 		e.printStackTrace();
+	 	}
+	 	return "123";
 
 	 }
 }

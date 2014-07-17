@@ -58,7 +58,11 @@ public class CloudFivePush extends CordovaPlugin {
 			Log.v(TAG, "execute: data=" + data.toString());
 
 			try {
-				setUserIdentifier(data.getString(0));
+				String userIdentifier = data.getString(0);
+				if ("".equals(userIdentifier) || "null".equals(userIdentifier)) {
+					userIdentifier = null;
+				}
+				setUserIdentifier(userIdentifier);
 
 				gWebView = this.webView;
 

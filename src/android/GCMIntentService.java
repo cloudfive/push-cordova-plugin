@@ -170,7 +170,9 @@ public class GCMIntentService extends GCMBaseIntentService {
       nameValuePairs.add(new BasicNameValuePair("device_version", android.os.Build.VERSION.RELEASE));
       nameValuePairs.add(new BasicNameValuePair("device_identifier", Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID)));
       nameValuePairs.add(new BasicNameValuePair("device_platform", "android"));
-      nameValuePairs.add(new BasicNameValuePair("user_identifier", CloudFivePush.getUserIdentifier()));
+      if (CloudFivePush.getUserIdentifier() != null) {
+        nameValuePairs.add(new BasicNameValuePair("user_identifier", CloudFivePush.getUserIdentifier()));
+      }
       
       String version;
       try {

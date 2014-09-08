@@ -65,16 +65,18 @@
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"https://www.cloudfiveapp.com/push/register"]];
     request.HTTPMethod = @"POST";
     UIDevice *dev = [UIDevice currentDevice];
-    NSString *postData = [NSString stringWithFormat:@"bundle_identifier=%@&device_token=%@&device_platform=ios&user_identifier=%@&device_name=%@&device_model=%@&device_version=%@&app_version=%@",
-                             [[NSBundle mainBundle] bundleIdentifier],
-                             _apsToken,
-                             _uniqueIdentifier,
+    NSString *postData = [NSString stringWithFormat:@"bundle_identifier=%@&device_token=%@&device_platform=ios&device_name=%@&device_model=%@&device_version=%@&app_version=%@",
+                            [[NSBundle mainBundle] bundleIdentifier],
+                            _apsToken,
                             dev.name,
                             dev.model,
                             dev.systemVersion,
                             [[NSBundle mainBundle] objectForInfoDictionaryKey:(NSString*)kCFBundleVersionKey]
                           
-     ];
+    ];
+    if (_uniqueIdentifier != nil) {
+        postData = [postData stringByAppendingFormat:@"&user_identifier=%@", _uniqueIdentifier];
+    }
 
     request.HTTPBody = [postData dataUsingEncoding:NSUTF8StringEncoding];
     NSURLConnection *conn = [NSURLConnection connectionWithRequest:request delegate:self];

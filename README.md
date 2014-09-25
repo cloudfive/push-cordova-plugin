@@ -1,8 +1,9 @@
-=== Cloud Five Push ===
-== Cordova/Phonegap plugin ==
+# Cloud Five Push
+
+## Cordova/Phonegap plugin
  This is a phonegap plugin that makes integration with Cloud Five Push extremely simple. It was designed on Phonegap 3.5 but it probably works on lower versions down to 3.0. 
 
-== Installation ==
+## Installation
 
 The plugin conforms to plugman standards so installation is easy:
 
@@ -16,16 +17,16 @@ Where `user-identifier` is something like
 
 This will register the user anonymously which is useful if you only need to send occasionally "broadcast" messages to your entire userbase.  This probably isn't
 
-== Removal == 
+## Removal
 
 To remove this plugin, simply execute 
     
     $ cordova plugin remove com.cloudfiveapp.push
 
 
-== Setup for Apple ==
+## Setup for Apple
 
-== Setup for Android ==
+## Setup for Android
 
 This best reference for instructions are here: http://developer.android.com/google/gcm/gs.html  Briefly, the steps are: 
 
@@ -41,7 +42,7 @@ Add ```<gcmSenderId>YOUR_PROJECT_ID</gcmSenderId>``` to your main config.xml and
 This should be the project id from the Google Developers Console.
 
 
-==LICENSE ==
+## LICENSE
 
     The MIT License
 

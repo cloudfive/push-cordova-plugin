@@ -13,7 +13,14 @@ To register/activate push notifications all you need to do is put this in your j
 
     CloudFivePush.register('user-identifer');
 
-Where `user-identifier` is something like
+Where `user-identifier` is something like an e-mail address, user id or some other way your application identifies users. 
+
+If you are sending custom payloads, you should register a callback
+   
+    CloudFivePush.setHandler(function(payload) {
+        // This will receive the payload specified in the push message
+    });
+
 
 This will register the user anonymously which is useful if you only need to send occasionally "broadcast" messages to your entire userbase.  This probably isn't
 
@@ -40,6 +47,9 @@ This best reference for instructions are here: http://developer.android.com/goog
 
 Add ```<gcmSenderId>YOUR_PROJECT_ID</gcmSenderId>``` to your main config.xml and run cordova prepare.
 This should be the project id from the Google Developers Console.
+
+## Sending messages
+
 
 
 ## LICENSE

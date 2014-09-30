@@ -1,29 +1,54 @@
 var exec = require("cordova/exec");
-var _handlerFunction = null;
-var _handlerScope = null;
+var _receivedFunction = null;
+var _receivedScope = null;
+var _activatedFunction = null;
+var _activatedScope = null;
+
+var _registrationSuccess = null;
+var _registrationFailure = null;
+
 module.exports = {
-  register: function(userIdentifier) {
+  register: function(userIdentifier, onSuccess, onFailure) {
+    _registrationFailure = onFailure;
+    _registrationSuccess = onSuccess;
     exec(
-      function() { console.log("Succesfully registered for Cloud Five Push") }, 
-      function() { console.log("Failed to register for push notifications")},
+      function() { 
+        console.log("Succesfully kicked off registration for Cloud Five Push");
+      }, 
+      function() { 
+        console.log("Failed attempt to register for push notifications -- check your configuration");
+      },
       'CloudFivePush', 
       'register', 
       [userIdentifier]
     );  
   },
-  setHandler: function(handlerFunction, handlerScope) {
-    _handlerFunction = handlerFunction;
-    _handlerScope = handlerScope;
+  onPushReceived: function(handlerFunction, handlerScope) {
+    _receivedFunction = handlerFunction;
+    _receivedScope = handlerScope;
+  },
+  onPushActivated: function(handlerFunction, handlerScope) {
+    _activatedFunction = handlerFunction;
+    _activatedScope = handlerScope;
   },
   _messageCallback: function(data) {
-    if (data.event === 'registered') {
-      console.log('registered with push service succesfully');
+    if (data.event === 'registration') {
+      if (data.success) {
+        if (typeof(_registrationSuccess) === 'function') { _registrationSuccess(data); }
+        console.log('registered with push service succesfully');  
+      } else {
+        if (typeof(_registrationFailure) === 'function') { _registrationFailure(data); }
+        console.log('failed to register with push service');  
+      }
     } else if (data.event === 'message') {
       console.log("got a notification in real time");
+      if (typeof(_receivedFunction) === 'function') {
+        _receivedFunction.apply(_receivedScope, data.payload);
+      }
     } else if (data.event === 'interaction') {
       console.log("user interacted with a notification");
-      if (typeof(_handlerFunction) === 'function') {
-        _handlerFunction.apply(_handlerScope, data.payload);
+      if (typeof(_activatedFunction) === 'function') {
+        _activatedFunction.apply(_activatedScope, data.payload);
       }
     }
   }

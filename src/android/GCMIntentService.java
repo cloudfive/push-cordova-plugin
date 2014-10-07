@@ -78,19 +78,18 @@ public class GCMIntentService extends GCMBaseIntentService {
     if (extras != null)
     {
       String alert = extras.getString("alert");
-      if (alert != null) {
-        createNotification(context, extras);
-      }
       
-      // if we are in the foreground, just surface the payload, else post it to the statusbar
+      // if we are in the foreground, just surface the payload
       if (CloudFivePush.isInForeground()) {
         extras.putBoolean("foreground", true);
         CloudFivePush.sendExtras(extras);
       } else {
         extras.putBoolean("foreground", false);
-        // Send a notification if there is a message
-    
       }
+      //Post the notification if it contains an alert key
+      if (alert != null) {
+          createNotification(context, extras);
+        }
     }
   }
 

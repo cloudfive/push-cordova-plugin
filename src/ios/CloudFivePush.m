@@ -8,23 +8,22 @@
 
 - (id)initWithWebView:(UIWebView *)theWebView {
     if (self = [super initWithWebView:theWebView]) {
-       [[UIApplication sharedApplication] registerForRemoteNotificationTypes:(UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound)];
+
     }
     return self;
 }
 
-- (void)alert:(CDVInvokedUrlCommand*)command
+// Send a message back to the javascript which handles all the success/failure stuff
+- (void)sendResult:(NSDictionary *)result
 {
-    CDVPluginResult* pluginResult = nil;
-    NSString* echo = [command.arguments objectAtIndex:0];
-
-    if (echo != nil && [echo length] > 0) {
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:echo];
-    } else {
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
-    }
-
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:result
+                                                       options: 0
+                                                         error:nil];
+    
+    NSString *jsonResult = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    NSString *javascript = [NSString stringWithFormat:@"window.CloudFivePush._messageCallback(%@)", jsonResult];
+    
+    [self.webView stringByEvaluatingJavaScriptFromString:javascript];
 }
 
 -(void)didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)token
@@ -35,28 +34,68 @@
                                        stringByReplacingOccurrencesOfString: @" " withString:@""];
     [self notifyCloudFive];
     
-    if (_registrationCallbackId) {
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[token description]];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:_registrationCallbackId];
-    }
+    [self sendResult:@{@"event": @"registration", @"success": @YES, @"token": _apsToken}];
 }
 -(void) didFailToRegisterForRemoteNotificationsWithError:(NSError *)error
 {
     NSLog(@"Error registering for push");
+    [self sendResult:@{@"event": @"registration", @"success": @NO, @"error": [error localizedDescription]} ];
 }
 
+// plugin method
 - (void)register:(CDVInvokedUrlCommand*)command
 {
     _uniqueIdentifier = (NSString*)[command argumentAtIndex:0];
-    [[UIApplication sharedApplication] registerForRemoteNotificationTypes:UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound];
+    
+    UIApplication *application = [UIApplication sharedApplication];
+    if ([application respondsToSelector:@selector(isRegisteredForRemoteNotifications)]) {
+        UIUserNotificationSettings *settings = [UIUserNotificationSettings
+                                                settingsForTypes:UIUserNotificationTypeAlert|UIUserNotificationTypeBadge|UIUserNotificationTypeSound
+                                                categories:nil];
+        [application registerUserNotificationSettings:settings];
+        [application registerForRemoteNotifications];
+    } else {
+        [application registerForRemoteNotificationTypes:(UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound)];
+    }
 }
 
 -(void)didReceiveRemoteNotification:(NSDictionary *)userInfo
 {
     NSDictionary *payload = [userInfo objectForKey:@"aps"];
+    NSString *message = [userInfo objectForKey:@"message"];
     NSString *alert = [payload objectForKey:@"alert"];
+    NSDictionary *customData = [userInfo objectForKey:@"data"];
+
+    NSString *title = alert;
+    NSString *detailButton = nil;
+    if (customData) {
+        detailButton = @"Details";
+    }
+    
+    if (message == nil) {
+        title = [[[NSBundle mainBundle] infoDictionary]  objectForKey:@"CFBundleName"];
+        message = alert;
+    }
+
     if (alert) {
-        [self showAlertWithMessage:alert];
+        self.alertUserInfo = userInfo;
+        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:title
+                                                        message:message
+                                                       delegate:self
+                                              cancelButtonTitle:@"Dismiss"
+                                              otherButtonTitles:detailButton, nil];
+        [alertView show];
+    }
+    
+    if (customData) {
+        [self sendResult:@{@"event": @"message", @"payload": userInfo} ];
+    }
+}
+
+- (void)alertView:(UIAlertView *)alertView didDismissWithButtonIndex:(NSInteger)buttonIndex {
+    if (buttonIndex == 1) {
+        [self sendResult:@{@"event": @"interaction", @"payload": self.alertUserInfo} ];
+        self.alertUserInfo = nil;
     }
 }
 
@@ -83,17 +122,6 @@
     [conn start];
 }
 
-
--(void)showAlertWithMessage:(NSString*)message
-{
-    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Alert"
-                                                    message:message
-                                                   delegate:nil
-                                          cancelButtonTitle:@"OK"
-                                          otherButtonTitles:nil];
-    [alert show];
-}
-
 -(void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error
 {
     NSLog(@"Error talking to cloudfive");
@@ -110,12 +138,12 @@
 }
 
 // Accept self signed certificates
-- (BOOL)connection:(NSURLConnection *)connection canAuthenticateAgainstProtectionSpace:(NSURLProtectionSpace *)protectionSpace {
-    return [protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust];
-}
-
-- (void)connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge {
-    NSURLCredential *credential = [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust];
-    [challenge.sender useCredential:credential forAuthenticationChallenge:challenge];
-}
+//- (BOOL)connection:(NSURLConnection *)connection canAuthenticateAgainstProtectionSpace:(NSURLProtectionSpace *)protectionSpace {
+//    return [protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust];
+//}
+//
+//- (void)connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge {
+//    NSURLCredential *credential = [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust];
+//    [challenge.sender useCredential:credential forAuthenticationChallenge:challenge];
+//}
 @end

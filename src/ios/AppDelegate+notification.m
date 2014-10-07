@@ -93,14 +93,11 @@ static char launchNotificationKey;
     
 //    //zero badge
 //    application.applicationIconBadgeNumber = 0;
-//
-//    if (self.launchNotification) {
-//        PushPlugin *pushHandler = [self getCommandInstance:@"PushPlugin"];
-//
-//        pushHandler.notificationMessage = self.launchNotification;
-//        self.launchNotification = nil;
-//        [pushHandler performSelectorOnMainThread:@selector(notificationReceived) withObject:pushHandler waitUntilDone:NO];
-//    }
+    if (self.launchNotification) {
+        CloudFivePush *cloudFive = [self getCommandInstance:@"CloudFivePush"];
+        [cloudFive performSelectorOnMainThread:@selector(didReceiveRemoteNotification:) withObject:self.launchNotification waitUntilDone:NO];
+        self.launchNotification = nil;
+    }
 }
 
 // The accessors use an Associative Reference since you can't define a iVar in a category

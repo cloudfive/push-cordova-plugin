@@ -28,7 +28,6 @@ public class PushHandlerActivity extends Activity
     processPushBundle(isPushPluginActive);
 
     GCMIntentService.cancelNotification(this);
-
     finish();
 
     if (!isPushPluginActive) {
@@ -46,9 +45,9 @@ public class PushHandlerActivity extends Activity
 
     if (extras != null) {
       Bundle originalExtras = extras.getBundle("pushBundle");
-            
-            originalExtras.putBoolean("foreground", false);
-            originalExtras.putBoolean("coldstart", !isPushPluginActive);
+      originalExtras.putString("event", "interaction");
+      originalExtras.putBoolean("foreground", false);
+      originalExtras.putBoolean("coldstart", !isPushPluginActive);
 
       CloudFivePush.sendExtras(originalExtras);
     }

@@ -33,7 +33,7 @@ public class CloudFivePush extends CordovaPlugin {
 	public static final String UNREGISTER = "unregister";
 
 	private static CordovaWebView gWebView;
-	private static String gECB;
+	private static String notificationCallback = "CloudFivePush._messageCallback";
 	private static Bundle gCachedExtras = null;
 	private static boolean gForeground = false;
 	private static String userIdentifier;
@@ -65,11 +65,8 @@ public class CloudFivePush extends CordovaPlugin {
 				setUserIdentifier(userIdentifier);
 
 				gWebView = this.webView;
-
-				//        gECB = (String) jo.get("ecb");
-				//        gSenderID = (String) jo.get("senderID");
-
-				Log.v(TAG, "execute: ECB=" + gECB + " senderID=" + getGcmSenderId());
+						
+				Log.v(TAG, "execute: ECB=" + notificationCallback + " senderID=" + getGcmSenderId());
 
 				GCMRegistrar.register(getApplicationContext(), getGcmSenderId());
 				result = true;
@@ -106,10 +103,10 @@ public class CloudFivePush extends CordovaPlugin {
 	 * Sends a json object to the client as parameter to a method which is defined in gECB.
 	 */
 	public static void sendJavascript(JSONObject _json) {
-		String _d = "javascript:" + gECB + "(" + _json.toString() + ")";
+		String _d = "javascript:" + notificationCallback + "(" + _json.toString() + ")";
 		Log.v(TAG, "sendJavascript: " + _d);
 
-		if (gECB != null && gWebView != null) {
+		if (notificationCallback != null && gWebView != null) {
 			gWebView.sendJavascript(_d);
 		}
 	}
@@ -121,7 +118,7 @@ public class CloudFivePush extends CordovaPlugin {
 	public static void sendExtras(Bundle extras)
 	{
 		if (extras != null) {
-			if (gECB != null && gWebView != null) {
+			if (notificationCallback != null && gWebView != null) {
 				sendJavascript(convertBundleToJson(extras));
 			} else {
 				Log.v(TAG, "sendExtras: caching extras to send at a later time.");
@@ -152,7 +149,7 @@ public class CloudFivePush extends CordovaPlugin {
 	public void onDestroy() {
 		super.onDestroy();
 		gForeground = false;
-		gECB = null;
+		notificationCallback = null;
 		gWebView = null;
 	}
 
@@ -164,7 +161,7 @@ public class CloudFivePush extends CordovaPlugin {
 		 try
 		 {
 			 JSONObject json;
-			 json = new JSONObject().put("event", "message");
+			 json = new JSONObject().put("event", "message"); //If you want to change this, set it in the extras
 
 			 JSONObject jsondata = new JSONObject();
 			 Iterator<String> it = extras.keySet().iterator();
@@ -174,7 +171,7 @@ public class CloudFivePush extends CordovaPlugin {
 				 Object value = extras.get(key);
 
 				 // System data from Android
-				 if (key.equals("from") || key.equals("collapse_key"))
+				 if (key.equals("from") || key.equals("collapse_key") || key.equals("event"))
 				 {
 					 json.put(key, value);
 				 }
@@ -188,12 +185,6 @@ public class CloudFivePush extends CordovaPlugin {
 				 }
 				 else
 				 {
-					 // Maintain backwards compatibility
-					 if (key.equals("message") || key.equals("msgcnt") || key.equals("soundname"))
-					 {
-						 json.put(key, value);
-					 }
-
 					 if ( value instanceof String ) {
 						 // Try to figure out if the value is another JSON object
 
@@ -281,7 +272,7 @@ public class CloudFivePush extends CordovaPlugin {
 			// TODO Auto-generated catch block
 	 		e.printStackTrace();
 	 	}
-	 	return "123";
+	 	return "";
 
 	 }
 }

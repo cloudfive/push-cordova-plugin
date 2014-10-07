@@ -11,11 +11,18 @@ The plugin conforms to plugman standards so installation is easy:
 
 To register/activate push notifications all you need to do is put this in your javascript:
 
+    CloudFivePush.register();
+
+This will register the user anonymously which is useful if you only need to send occasionally "broadcast" messages to your entire userbase.  If you want to send messages to individual users, you can specify an identifier, i.e. something like an e-mail address, user id or some other way your application identifies users.  Then you can target those individual users. 
+
     CloudFivePush.register('user-identifer');
 
-Where `user-identifier` is something like
+If you are sending custom/arbitrary payloads, you should register a callback for when the user acknowledges your notification:
+   
+    CloudFivePush.onPushActivated(function(payload) {
+        // This will receive the payload specified in the push message
+    });
 
-This will register the user anonymously which is useful if you only need to send occasionally "broadcast" messages to your entire userbase.  This probably isn't
 
 ## Removal
 
@@ -40,6 +47,9 @@ This best reference for instructions are here: http://developer.android.com/goog
 
 Add ```<gcmSenderId>YOUR_PROJECT_ID</gcmSenderId>``` to your main config.xml and run cordova prepare.
 This should be the project id from the Google Developers Console.
+
+## Sending messages
+
 
 
 ## LICENSE

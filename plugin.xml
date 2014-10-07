@@ -28,10 +28,6 @@
                 <param name="android-package" value="com.cloudfiveapp.cordova.plugins.push.CloudFivePush"/>
             </feature>
         </config-file>
-        <config-file target="config.xml" parent="/*">
-            <!-- Replace this with your GCM sender ID from the google developer console -->
-            <gcmSenderId>253951406951</gcmSenderId>
-        </config-file>
 
         <source-file src="src/android/CloudFivePush.java" target-dir="src/com/cloudfiveapp/cordova/plugins/push" />
         <source-file src="src/android/CloudFiveBroadcastReceiver.java" target-dir="src/com/cloudfiveapp/cordova/plugins/push" />

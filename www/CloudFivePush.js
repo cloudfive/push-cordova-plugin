@@ -12,16 +12,16 @@ module.exports = {
     _registrationFailure = onFailure;
     _registrationSuccess = onSuccess;
     exec(
-      function() { 
+      function() {
         console.log("Succesfully kicked off registration for Cloud Five Push");
-      }, 
-      function() { 
+      },
+      function() {
         console.log("Failed attempt to register for push notifications -- check your configuration");
       },
-      'CloudFivePush', 
-      'register', 
+      'CloudFivePush',
+      'register',
       [userIdentifier]
-    );  
+    );
   },
   onPushReceived: function(handlerFunction, handlerScope) {
     _receivedFunction = handlerFunction;
@@ -35,20 +35,20 @@ module.exports = {
     if (data.event === 'registration') {
       if (data.success) {
         if (typeof(_registrationSuccess) === 'function') { _registrationSuccess(data); }
-        console.log('registered with push service succesfully');  
+        console.log('registered with push service succesfully');
       } else {
         if (typeof(_registrationFailure) === 'function') { _registrationFailure(data); }
-        console.log('failed to register with push service');  
+        console.log('failed to register with push service');
       }
     } else if (data.event === 'message') {
       console.log("got a notification in real time");
       if (typeof(_receivedFunction) === 'function') {
-        _receivedFunction.apply(_receivedScope, data.payload);
+        _receivedFunction.call(_receivedScope, data.payload);
       }
     } else if (data.event === 'interaction') {
       console.log("user interacted with a notification");
       if (typeof(_activatedFunction) === 'function') {
-        _activatedFunction.apply(_activatedScope, data.payload);
+        _activatedFunction.call(_activatedScope, data.payload);
       }
     }
   }

@@ -71,7 +71,6 @@ module.exports = {
     } else if (data.event === 'message') {
       var handler = callbacks.received;
       handler.success.call(handler.scope, data.payload);
-      this.finish();
     } else if (data.event === 'interaction') {
       var handler = callbacks.activated;
       handler.success.call(handler.scope, data.payload);

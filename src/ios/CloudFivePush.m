@@ -1,57 +1,38 @@
 #import "CloudFivePush.h"
 #import <Cordova/CDV.h>
 
-@implementation CloudFivePush : CDVPlugin
+@implementation CloudFivePush{
+    NSDictionary *launchNotification;
+    void (^_completionHandler)(UIBackgroundFetchResult);
+}
 
-/* this method is called the moment the class is made known to the obj-c runtime,
- before app launch completes. */
+- (void)pluginInitialize
+{
+    // UIApplicationDidFinishLaunchingNotification
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didFinishLaunchingWithOptions:) name:@"UIApplicationDidFinishLaunchingNotification" object:nil];
+    
+    // CloudFivePushDidReceiveRemoteNotification
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onNotificationReceived:) name:@"CloudFivePushDidReceiveRemoteNotification" object:nil];
+}
 
-- (id)initWithWebView:(UIWebView *)theWebView {
-    if (self = [super initWithWebView:theWebView]) {
-
+// Detect launch-notification
+-(void) didFinishLaunchingWithOptions:(NSNotification *) notification {
+    NSDictionary *launchOptions = [notification userInfo];
+    if (launchOptions) {
+        launchNotification = [launchOptions objectForKey: @"UIApplicationLaunchOptionsRemoteNotificationKey"];
     }
-    return self;
-}
-
-// Send a message back to the javascript which handles all the success/failure stuff
-- (void)sendResult:(NSDictionary *)result
-{
-    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:result
-                                                       options: 0
-                                                         error:nil];
-    
-    NSString *jsonResult = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-    NSString *javascript = [NSString stringWithFormat:@"window.CloudFivePush._messageCallback(%@)", jsonResult];
-    
-    [self.webView stringByEvaluatingJavaScriptFromString:javascript];
-}
-
--(void)didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)token
-{
-    NSLog(@"Got token: %@", token);
-    _apsToken = [[[[token description] stringByReplacingOccurrencesOfString:@"<"  withString:@""]
-                                       stringByReplacingOccurrencesOfString:@">"  withString:@""]
-                                       stringByReplacingOccurrencesOfString: @" " withString:@""];
-    [self notifyCloudFive];
-    
-    [self sendResult:@{@"event": @"registration", @"success": @YES, @"token": _apsToken}];
-}
--(void) didFailToRegisterForRemoteNotificationsWithError:(NSError *)error
-{
-    NSLog(@"Error registering for push");
-    [self sendResult:@{@"event": @"registration", @"success": @NO, @"error": [error localizedDescription]} ];
 }
 
 // plugin method
 - (void)register:(CDVInvokedUrlCommand*)command
 {
     _uniqueIdentifier = (NSString*)[command argumentAtIndex:0];
+    _callbackId = command.callbackId;
     
     UIApplication *application = [UIApplication sharedApplication];
+
     if ([application respondsToSelector:@selector(isRegisteredForRemoteNotifications)]) {
-        UIUserNotificationSettings *settings = [UIUserNotificationSettings
-                                                settingsForTypes:UIUserNotificationTypeAlert|UIUserNotificationTypeBadge|UIUserNotificationTypeSound
-                                                categories:nil];
+        UIUserNotificationSettings *settings = [UIUserNotificationSettings settingsForTypes:UIUserNotificationTypeAlert|UIUserNotificationTypeBadge|UIUserNotificationTypeSound categories:nil];
         [application registerUserNotificationSettings:settings];
         [application registerForRemoteNotifications];
     } else {
@@ -59,8 +40,53 @@
     }
 }
 
--(void)didReceiveRemoteNotification:(NSDictionary *)userInfo
+
+// Send a message back to the javascript which handles all the success/failure stuff
+- (void)sendResult:(NSDictionary *)result
 {
+    CDVPluginResult* response = nil;
+    if (result) {
+        response = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary: result];
+        
+        [response setKeepCallbackAsBool:YES];
+    
+        [self.commandDelegate sendPluginResult:response callbackId: _callbackId];
+    }
+}
+
+-(void)didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)token
+{
+    NSLog(@"- CloudFivePush Got token: %@", token);
+    _apsToken = [[[[token description] stringByReplacingOccurrencesOfString:@"<"  withString:@""]
+                                       stringByReplacingOccurrencesOfString:@">"  withString:@""]
+                                       stringByReplacingOccurrencesOfString: @" " withString:@""];
+    [self notifyCloudFive];
+    
+    [self sendResult:@{@"event": @"registration", @"success": @YES, @"token": _apsToken}];
+    
+    if (launchNotification) {
+        [self sendResult:@{@"event": @"message", @"payload": launchNotification} ];
+    }
+}
+
+-(void) didFailToRegisterForRemoteNotificationsWithError:(NSError *)error
+{
+    NSLog(@"- CloudFivePush Error registering for push");
+    [self sendResult:@{@"event": @"registration", @"success": @NO, @"error": [error localizedDescription]} ];
+}
+
+-(void) onNotificationReceived:(NSNotification *) notification
+{
+    NSLog(@"- CloudFivePush Notification received %@", notification);
+    
+    _completionHandler = [notification.object[@"handler"] copy];
+    
+    UIApplication *app = [UIApplication sharedApplication];
+    // We only run in the background.  Foreground notifications should already be handled.
+    UIApplicationState state = [app applicationState];
+    
+    NSDictionary *userInfo = [notification.object[@"userInfo"] copy];
+
     NSDictionary *payload = [userInfo objectForKey:@"aps"];
     NSString *message = [userInfo objectForKey:@"message"];
     NSString *alert = [payload objectForKey:@"alert"];
@@ -76,19 +102,31 @@
         title = [[[NSBundle mainBundle] infoDictionary]  objectForKey:@"CFBundleName"];
         message = alert;
     }
-
-    if (alert) {
+    
+    if (alert && state != UIApplicationStateBackground) {
         self.alertUserInfo = userInfo;
-        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:title
-                                                        message:message
-                                                       delegate:self
-                                              cancelButtonTitle:@"Dismiss"
-                                              otherButtonTitles:detailButton, nil];
+        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:title message:message delegate:self cancelButtonTitle:@"Dismiss" otherButtonTitles:detailButton, nil];
         [alertView show];
     }
     
-    if (customData) {
+    [self.commandDelegate runInBackground:^{
         [self sendResult:@{@"event": @"message", @"payload": userInfo} ];
+    }];
+}
+
+// Plugin method:  Kill the background-process
+-(void) finish:(CDVInvokedUrlCommand*)command
+{
+    NSLog(@"- CloudFivePush finish");
+    [self doFinish];
+}
+
+// Kill the background-process
+-(void) doFinish
+{
+    if (_completionHandler) {
+        _completionHandler(UIBackgroundFetchResultNewData);
+        _completionHandler = nil;
     }
 }
 
@@ -124,26 +162,16 @@
 
 -(void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error
 {
-    NSLog(@"Error talking to cloudfive");
+    NSLog(@"- CloudFivePush Error talking to cloudfive");
 }
 
 -(void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response
 {
     NSHTTPURLResponse* httpResponse = (NSHTTPURLResponse*)response;
     if ([httpResponse statusCode] == 200) {
-        NSLog(@"Successfully registered!");
+        NSLog(@"- CloudFivePush Successfully registered!");
     } else {
-        NSLog(@"Couldn't register with cloudfive");
+        NSLog(@"- CloudFivePush Couldn't register with cloudfive");
     }
 }
-
-// Accept self signed certificates
-//- (BOOL)connection:(NSURLConnection *)connection canAuthenticateAgainstProtectionSpace:(NSURLProtectionSpace *)protectionSpace {
-//    return [protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust];
-//}
-//
-//- (void)connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge {
-//    NSURLCredential *credential = [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust];
-//    [challenge.sender useCredential:credential forAuthenticationChallenge:challenge];
-//}
 @end

@@ -13,6 +13,7 @@
         <config-file target="config.xml" parent="/*">
             <feature name="CloudFivePush">
                 <param name="ios-package" value="CloudFivePush"/>
+                <param name="onload" value="true"/>
             </feature>
         </config-file>
         <header-file src="src/ios/CloudFivePush.h" />

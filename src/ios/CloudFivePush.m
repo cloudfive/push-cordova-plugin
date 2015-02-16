@@ -8,16 +8,18 @@
 
 - (void)pluginInitialize
 {
+    // Listen to some events...
+    
     // UIApplicationDidFinishLaunchingNotification
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didFinishLaunchingWithOptions:) name:@"UIApplicationDidFinishLaunchingNotification" object:nil];
     
     // CloudFivePushDidReceiveRemoteNotification
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onNotificationReceived:) name:@"CloudFivePushDidReceiveRemoteNotification" object:nil];
     
-    // CDVRemoteNotification
+    // CDVRemoteNotification (re-broadcasted from Cordova's AppDelegate#didRegisterForRemoteNotificationsWithDeviceToken)
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didRegisterForRemoteNotificationsWithDeviceToken:) name:@"CDVRemoteNotification" object:nil];
     
-    // CDVRemoteNotificationError
+    // CDVRemoteNotificationError (re-broadcasted from Cordova's AppDelegate#didFailToRegisterForRemoteNotificationsWithError)
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didFailToRegisterForRemoteNotificationsWithError:) name:@"CDVRemoteNotificationError" object:nil];
 }
 
@@ -86,10 +88,10 @@
 
 -(void) onNotificationReceived:(NSNotification *) notification
 {
-    NSLog(@"- CloudFivePush Notification received %@", notification);
-    
     _completionHandler          = [notification.object[@"handler"] copy];
     NSDictionary *userInfo      = [notification.object[@"userInfo"] copy];
+    
+    NSLog(@"- CloudFivePush Notification received %@", userInfo);
     
     [self.commandDelegate runInBackground:^{
         [self sendResult:@{@"event": @"message", @"payload": userInfo} ];

@@ -3,6 +3,7 @@
 
 @implementation CloudFivePush{
     NSDictionary *launchNotification;
+    NSDictionary *alertUserInfo;
     void (^_completionHandler)(UIBackgroundFetchResult);
 }
 
@@ -14,7 +15,7 @@
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didFinishLaunchingWithOptions:) name:@"UIApplicationDidFinishLaunchingNotification" object:nil];
     
     // CloudFivePushDidReceiveRemoteNotification
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onNotificationReceived:) name:@"CloudFivePushDidReceiveRemoteNotification" object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didReceiveRemoteNotification:) name:@"CloudFivePushDidReceiveRemoteNotification" object:nil];
     
     // CDVRemoteNotification (re-broadcasted from Cordova's AppDelegate#didRegisterForRemoteNotificationsWithDeviceToken)
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didRegisterForRemoteNotificationsWithDeviceToken:) name:@"CDVRemoteNotification" object:nil];
@@ -86,16 +87,49 @@
     [self sendResult:@{@"event": @"registration", @"success": @NO, @"error": [error localizedDescription]} ];
 }
 
--(void) onNotificationReceived:(NSNotification *) notification
+-(void) didReceiveRemoteNotification:(NSNotification *) notification
 {
+    UIApplicationState state    = [[UIApplication sharedApplication] applicationState];
     _completionHandler          = [notification.object[@"handler"] copy];
     NSDictionary *userInfo      = [notification.object[@"userInfo"] copy];
+    NSDictionary *payload       = [userInfo objectForKey:@"aps"];
+    NSString *message           = [userInfo objectForKey:@"message"];
+    NSString *alert             = [payload objectForKey:@"alert"];
+    NSDictionary *customData    = [userInfo objectForKey:@"data"];
     
     NSLog(@"- CloudFivePush Notification received %@", userInfo);
     
-    [self.commandDelegate runInBackground:^{
-        [self sendResult:@{@"event": @"message", @"payload": userInfo} ];
-    }];
+    if (state != UIApplicationStateBackground) {
+        NSString *title = alert;
+        NSString *detailButton = nil;
+        
+        if (customData) {
+            detailButton = @"Details";
+        }
+        if (message == nil) {
+            title = [[[NSBundle mainBundle] infoDictionary]  objectForKey:@"CFBundleName"];
+            message = alert;
+        }
+        if (alert) {
+            alertUserInfo = userInfo;
+            UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:title message:message delegate:self cancelButtonTitle:@"Dismiss" otherButtonTitles:detailButton, nil];
+            [alertView show];
+        }
+    }
+    if (customData) {
+        [self.commandDelegate runInBackground:^{
+            [self sendResult:@{@"event": @"message", @"payload": userInfo} ];
+        }];
+    }
+}
+
+- (void)alertView:(UIAlertView *)alertView didDismissWithButtonIndex:(NSInteger)buttonIndex {
+    if (buttonIndex == 1) {
+        [self.commandDelegate runInBackground:^{
+            [self sendResult:@{@"event": @"interaction", @"payload": alertUserInfo} ];
+            alertUserInfo = nil;
+        }];
+    }
 }
 
 // Plugin method:  Kill the background-process

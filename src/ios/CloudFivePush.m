@@ -13,6 +13,12 @@
     
     // CloudFivePushDidReceiveRemoteNotification
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onNotificationReceived:) name:@"CloudFivePushDidReceiveRemoteNotification" object:nil];
+    
+    // CDVRemoteNotification
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didRegisterForRemoteNotificationsWithDeviceToken:) name:@"CDVRemoteNotification" object:nil];
+    
+    // CDVRemoteNotificationError
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didFailToRegisterForRemoteNotificationsWithError:) name:@"CDVRemoteNotificationError" object:nil];
 }
 
 // Detect launch-notification
@@ -53,8 +59,10 @@
     }
 }
 
--(void)didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)token
+-(void)didRegisterForRemoteNotificationsWithDeviceToken:(NSNotification *) notification
 {
+    NSData* token = notification.object;
+
     NSLog(@"- CloudFivePush Got token: %@", token);
     _apsToken = [[[[token description] stringByReplacingOccurrencesOfString:@"<"  withString:@""]
                                        stringByReplacingOccurrencesOfString:@">"  withString:@""]
@@ -69,8 +77,9 @@
     }
 }
 
--(void) didFailToRegisterForRemoteNotificationsWithError:(NSError *)error
+-(void) didFailToRegisterForRemoteNotificationsWithError:(NSNotification *) notification
 {
+    NSError* error = notification.object;
     NSLog(@"- CloudFivePush Error registering for push");
     [self sendResult:@{@"event": @"registration", @"success": @NO, @"error": [error localizedDescription]} ];
 }

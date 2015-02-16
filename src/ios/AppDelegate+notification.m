@@ -7,25 +7,8 @@
 //
 
 #import "AppDelegate+notification.h"
-#import "CloudFivePush.h"
 
 @implementation AppDelegate (notification)
-
-- (id) getCommandInstance:(NSString*)className
-{
-  return [self.viewController getCommandInstance:className];
-}
-
-- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
-    CloudFivePush *cloudFive = [self getCommandInstance:@"CloudFivePush"];
-    [cloudFive didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
-}
-
-- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
-    CloudFivePush *cloudFive = [self getCommandInstance:@"CloudFivePush"];
-    [cloudFive didFailToRegisterForRemoteNotificationsWithError:error];
-}
-
 
 - (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void(^)(UIBackgroundFetchResult result))completionHandler
 {

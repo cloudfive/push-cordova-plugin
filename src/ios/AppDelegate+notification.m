@@ -42,19 +42,4 @@
     [[NSNotificationCenter defaultCenter] postNotificationName:@"CloudFivePushDidReceiveRemoteNotification" object:params];
 }
 
-- (void)applicationDidBecomeActive:(UIApplication *)application {
-    
-    NSLog(@"active");
-    
-//    //zero badge
-//    application.applicationIconBadgeNumber = 0;
-    /*
-    if (self.launchNotification) {
-        CloudFivePush *cloudFive = [self getCommandInstance:@"CloudFivePush"];
-        [cloudFive performSelectorOnMainThread:@selector(didReceiveRemoteNotification:) withObject:self.launchNotification waitUntilDone:NO];
-        self.launchNotification = nil;
-    }
-     */
-}
-
 @end

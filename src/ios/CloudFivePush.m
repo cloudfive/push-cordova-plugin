@@ -40,7 +40,6 @@
     }
 }
 
-
 // Send a message back to the javascript which handles all the success/failure stuff
 - (void)sendResult:(NSDictionary *)result
 {
@@ -66,6 +65,7 @@
     
     if (launchNotification) {
         [self sendResult:@{@"event": @"message", @"payload": launchNotification} ];
+        launchNotification = nil;
     }
 }
 
@@ -79,35 +79,8 @@
 {
     NSLog(@"- CloudFivePush Notification received %@", notification);
     
-    _completionHandler = [notification.object[@"handler"] copy];
-    
-    UIApplication *app = [UIApplication sharedApplication];
-    // We only run in the background.  Foreground notifications should already be handled.
-    UIApplicationState state = [app applicationState];
-    
-    NSDictionary *userInfo = [notification.object[@"userInfo"] copy];
-
-    NSDictionary *payload = [userInfo objectForKey:@"aps"];
-    NSString *message = [userInfo objectForKey:@"message"];
-    NSString *alert = [payload objectForKey:@"alert"];
-    NSDictionary *customData = [userInfo objectForKey:@"data"];
-
-    NSString *title = alert;
-    NSString *detailButton = nil;
-    if (customData) {
-        detailButton = @"Details";
-    }
-    
-    if (message == nil) {
-        title = [[[NSBundle mainBundle] infoDictionary]  objectForKey:@"CFBundleName"];
-        message = alert;
-    }
-    
-    if (alert && state != UIApplicationStateBackground) {
-        self.alertUserInfo = userInfo;
-        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:title message:message delegate:self cancelButtonTitle:@"Dismiss" otherButtonTitles:detailButton, nil];
-        [alertView show];
-    }
+    _completionHandler          = [notification.object[@"handler"] copy];
+    NSDictionary *userInfo      = [notification.object[@"userInfo"] copy];
     
     [self.commandDelegate runInBackground:^{
         [self sendResult:@{@"event": @"message", @"payload": userInfo} ];
@@ -127,13 +100,6 @@
     if (_completionHandler) {
         _completionHandler(UIBackgroundFetchResultNewData);
         _completionHandler = nil;
-    }
-}
-
-- (void)alertView:(UIAlertView *)alertView didDismissWithButtonIndex:(NSInteger)buttonIndex {
-    if (buttonIndex == 1) {
-        [self sendResult:@{@"event": @"interaction", @"payload": self.alertUserInfo} ];
-        self.alertUserInfo = nil;
     }
 }
 

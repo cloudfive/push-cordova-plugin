@@ -19,6 +19,7 @@ import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaWebView;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.PluginResult;
 
 import com.google.android.gcm.*;
 
@@ -29,15 +30,18 @@ import com.google.android.gcm.*;
 public class CloudFivePush extends CordovaPlugin {
 	public static final String TAG = "CloudFivePush";
 
-	public static final String REGISTER = "register";
-	public static final String UNREGISTER = "unregister";
+	public static final String REGISTER 	= "register";
+	public static final String UNREGISTER 	= "unregister";
+	public static final String FINISH 		= "finish";
 
 	private static CordovaWebView gWebView;
 	private static String notificationCallback = "CloudFivePush._messageCallback";
 	private static Bundle gCachedExtras = null;
 	private static boolean gForeground = false;
 	private static String userIdentifier;
-
+	
+	public static CallbackContext callbackContext;
+	
 	/**
 	 * Gets the application context from cordova's main activity.
 	 * @return the application context
@@ -50,11 +54,11 @@ public class CloudFivePush extends CordovaPlugin {
 	public boolean execute(String action, JSONArray data, CallbackContext callbackContext) {
 
 		boolean result = false;
-
+		
 		Log.v(TAG, "execute: action=" + action);
 
 		if (REGISTER.equals(action)) {
-
+			CloudFivePush.callbackContext =  callbackContext;
 			Log.v(TAG, "execute: data=" + data.toString());
 
 			try {
@@ -66,15 +70,16 @@ public class CloudFivePush extends CordovaPlugin {
 
 				gWebView = this.webView;
 						
-				Log.v(TAG, "execute: ECB=" + notificationCallback + " senderID=" + getGcmSenderId());
-
 				GCMRegistrar.register(getApplicationContext(), getGcmSenderId());
 				result = true;
-				callbackContext.success();
+				
+				JSONObject json = new JSONObject();
+				json.put("event", "registration");
+				CloudFivePush.sendJavascript(json);
+				
 			} catch (JSONException e) {
 				Log.e(TAG, "execute: Got JSON Exception " + e.getMessage());
 				result = false;
-				callbackContext.error(e.getMessage());
 			}
 
 			if ( gCachedExtras != null) {
@@ -86,10 +91,21 @@ public class CloudFivePush extends CordovaPlugin {
 		} else if (UNREGISTER.equals(action)) {
 
 			GCMRegistrar.unregister(getApplicationContext());
-
 			Log.v(TAG, "UNREGISTER");
+			
+			try {
+				JSONObject json = new JSONObject();
+				json.put("event", "unregister");
+				CloudFivePush.sendJavascript(json);
+			} catch(JSONException e) {
+				Log.e(TAG, "JSON Exception");
+			}
 			result = true;
-			callbackContext.success();
+			
+		} else if (FINISH.equals(action)) {
+			// This is a method used by ios to signal completion of the message-callback.
+			// NO Android implementation. 
+			Log.v(TAG, "FINISH");
 		} else {
 			result = false;
 			Log.e(TAG, "Invalid action : " + action);
@@ -103,14 +119,16 @@ public class CloudFivePush extends CordovaPlugin {
 	 * Sends a json object to the client as parameter to a method which is defined in gECB.
 	 */
 	public static void sendJavascript(JSONObject _json) {
-		String _d = "javascript:" + notificationCallback + "(" + _json.toString() + ")";
-		Log.v(TAG, "sendJavascript: " + _d);
-
-		if (notificationCallback != null && gWebView != null) {
-			gWebView.sendJavascript(_d);
+		Log.v(TAG, "sendJavascript");
+		if (CloudFivePush.callbackContext != null) {
+			PluginResult r = new PluginResult(PluginResult.Status.OK, _json);
+			r.setKeepCallback(true);
+			callbackContext.sendPluginResult(r);
+		} else {
+			Log.e(TAG, "CloudFivePush#sendJavascript failed to locate its Cordova callbackContext");
 		}
 	}
-
+	
 	/*
 	 * Sends the pushbundle extras to the client application.
 	 * If the client application isn't currently active, it is cached for later processing.

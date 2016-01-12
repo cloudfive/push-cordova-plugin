@@ -47,8 +47,9 @@ public class GCMIntentService extends GCMBaseIntentService {
 
     try
     {
-      json = new JSONObject().put("event", "registered");
+      json = new JSONObject().put("event", "registration");
       json.put("regid", regId);
+      json.put("success", true);
 
       Log.v(TAG, "onRegistered: " + json.toString());
 
@@ -78,7 +79,7 @@ public class GCMIntentService extends GCMBaseIntentService {
     if (extras != null)
     {
       String alert = extras.getString("alert");
-      
+
       // if we are in the foreground, just surface the payload
       if (CloudFivePush.isInForeground()) {
         extras.putBoolean("foreground", true);
@@ -111,7 +112,7 @@ public class GCMIntentService extends GCMBaseIntentService {
       message = alert;
       alert = GCMIntentService.getAppName(context);
     }
-    
+
 //    NotificationCompat.Builder mBuilder =
 //      new NotificationCompat.Builder(context)
     Notification.Builder mBuilder =
@@ -136,12 +137,12 @@ public class GCMIntentService extends GCMBaseIntentService {
   public static void cancelNotification(Context context)
   {
     NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-    mNotificationManager.cancel((String)getAppName(context), NOTIFICATION_ID);  
+    mNotificationManager.cancel((String)getAppName(context), NOTIFICATION_ID);
   }
 
   private static String getAppName(Context context)
   {
-    CharSequence appName = 
+    CharSequence appName =
         context
           .getPackageManager()
           .getApplicationLabel(context.getApplicationInfo());
@@ -153,7 +154,7 @@ public class GCMIntentService extends GCMBaseIntentService {
   public void onError(Context context, String errorId) {
     Log.e(TAG, "onError - errorId: " + errorId);
   }
-  
+
   public void notifyCloudFive(Context context, String registrationId) {
     HttpClient httpclient = new DefaultHttpClient();
     HttpPost httppost = new HttpPost("https://www.cloudfiveapp.com/push/register");
@@ -172,7 +173,7 @@ public class GCMIntentService extends GCMBaseIntentService {
       if (CloudFivePush.getUserIdentifier() != null) {
         nameValuePairs.add(new BasicNameValuePair("user_identifier", CloudFivePush.getUserIdentifier()));
       }
-      
+
       String version;
       try {
         version = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;

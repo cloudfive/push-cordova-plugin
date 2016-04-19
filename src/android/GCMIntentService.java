@@ -6,16 +6,20 @@ import java.util.List;
 
 import com.google.android.gcm.GCMBaseIntentService;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -47,8 +51,9 @@ public class GCMIntentService extends GCMBaseIntentService {
 
     try
     {
-      json = new JSONObject().put("event", "registered");
+      json = new JSONObject().put("event", "registration");
       json.put("regid", regId);
+      json.put("success", true);
 
       Log.v(TAG, "onRegistered: " + json.toString());
 
@@ -59,8 +64,21 @@ public class GCMIntentService extends GCMBaseIntentService {
     }
     catch( JSONException e)
     {
-      // No message to the user is sent, JSON failed
-      Log.e(TAG, "onRegistered: JSON exception");
+      try
+      {
+        json = new JSONObject().put("event", "registration");
+        json.put("message", e.toString());
+        json.put("success", false);
+        // No message to the user is sent, JSON failed
+        Log.e(TAG, "onRegistered: JSON exception");
+
+        CloudFivePush.sendJavascript( json );
+      }
+      catch( JSONException error)
+      {
+        // No message to the user is sent, JSON failed
+        Log.e(TAG, "onRegistered: JSON exception");
+      }
     }
   }
 
@@ -78,7 +96,7 @@ public class GCMIntentService extends GCMBaseIntentService {
     if (extras != null)
     {
       String alert = extras.getString("alert");
-      
+
       // if we are in the foreground, just surface the payload
       if (CloudFivePush.isInForeground()) {
         extras.putBoolean("foreground", true);
@@ -111,7 +129,7 @@ public class GCMIntentService extends GCMBaseIntentService {
       message = alert;
       alert = GCMIntentService.getAppName(context);
     }
-    
+
 //    NotificationCompat.Builder mBuilder =
 //      new NotificationCompat.Builder(context)
     Notification.Builder mBuilder =
@@ -136,12 +154,12 @@ public class GCMIntentService extends GCMBaseIntentService {
   public static void cancelNotification(Context context)
   {
     NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-    mNotificationManager.cancel((String)getAppName(context), NOTIFICATION_ID);  
+    mNotificationManager.cancel((String)getAppName(context), NOTIFICATION_ID);
   }
 
   private static String getAppName(Context context)
   {
-    CharSequence appName = 
+    CharSequence appName =
         context
           .getPackageManager()
           .getApplicationLabel(context.getApplicationInfo());
@@ -153,37 +171,58 @@ public class GCMIntentService extends GCMBaseIntentService {
   public void onError(Context context, String errorId) {
     Log.e(TAG, "onError - errorId: " + errorId);
   }
-  
+
   public void notifyCloudFive(Context context, String registrationId) {
-    HttpClient httpclient = new DefaultHttpClient();
-    HttpPost httppost = new HttpPost("https://www.cloudfiveapp.com/push/register");
+    String charset = "UTF-8";
+    String url = "https://www.cloudfiveapp.com/push/register";
 
     try {
       // Add your data
-      List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-      //:device_token, :device_model, :device_name, :device_version, :app_version
-      nameValuePairs.add(new BasicNameValuePair("device_token", registrationId));
-      nameValuePairs.add(new BasicNameValuePair("package_name", context.getPackageName() ));
-      nameValuePairs.add(new BasicNameValuePair("device_model", android.os.Build.MODEL));
-      nameValuePairs.add(new BasicNameValuePair("device_name", android.os.Build.DISPLAY));
-      nameValuePairs.add(new BasicNameValuePair("device_version", android.os.Build.VERSION.RELEASE));
-      nameValuePairs.add(new BasicNameValuePair("device_identifier", Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID)));
-      nameValuePairs.add(new BasicNameValuePair("device_platform", "android"));
+      StringBuilder sbParams = new StringBuilder();
+      //:device_token, :, :device_name, :device_version, :app_version
+      sbParams.append("device_token").append("=").append(URLEncoder.encode(registrationId, charset));
+      sbParams.append("&package_name").append("=").append(URLEncoder.encode(context.getPackageName(), charset));
+      sbParams.append("&device_model").append("=").append(URLEncoder.encode(android.os.Build.MODEL, charset));
+      sbParams.append("&device_name").append("=").append(URLEncoder.encode(android.os.Build.DISPLAY, charset));
+      sbParams.append("&device_version").append("=").append(URLEncoder.encode(android.os.Build.VERSION.RELEASE, charset));
+      sbParams.append("&device_identifier").append("=").append(URLEncoder.encode(Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID), charset));
+      sbParams.append("&device_platform").append("=").append(URLEncoder.encode("android", charset));
       if (CloudFivePush.getUserIdentifier() != null) {
-        nameValuePairs.add(new BasicNameValuePair("user_identifier", CloudFivePush.getUserIdentifier()));
+        sbParams.append("&user_identifier").append("=").append(URLEncoder.encode(CloudFivePush.getUserIdentifier(), charset));
       }
-      
+
       String version;
       try {
         version = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
       } catch (NameNotFoundException e) {
         version = "unknown";
       }
-      nameValuePairs.add(new BasicNameValuePair("app_version", version));
-      httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-      HttpResponse response = httpclient.execute(httppost);
-    } catch (ClientProtocolException e) {
-      // TODO Auto-generated catch block
+      sbParams.append("&app_version").append("=").append(URLEncoder.encode(version, charset));
+
+      URL urlObj = new URL(url);
+      HttpURLConnection conn = (HttpURLConnection) urlObj.openConnection();
+      conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
+      conn.setRequestProperty("Host", "www.cloudfiveapp.com");
+      conn.setDoOutput(true);
+      conn.setRequestMethod("POST");
+      conn.setRequestProperty("Accept-Charset", charset);
+      conn.setReadTimeout(10000);
+      conn.setConnectTimeout(15000);
+
+      String paramsString = sbParams.toString();
+
+      conn.setRequestProperty("Content-Length", String.valueOf(paramsString.length()));
+      conn.connect();
+
+      OutputStream os = conn.getOutputStream();
+      BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+      writer.write(paramsString);
+
+      writer.flush();
+      writer.close();
+      os.close();
+      Log.i(TAG, "CloudFivePush response code: " + String.valueOf(conn.getResponseCode()));
+      conn.disconnect();
     } catch (IOException e) {
       // TODO Auto-generated catch block
       Log.w(TAG, "Unable to register with cloud five: " + e.getMessage());

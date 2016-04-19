@@ -1,24 +1,24 @@
 # Cloud Five Push
 
 ## Cordova/Phonegap plugin
- This is a phonegap plugin that makes integration with Cloud Five Push extremely simple. It was designed on Phonegap 3.5 but it probably works on lower versions down to 3.0. 
+ This is a phonegap plugin that makes integration with Cloud Five Push extremely simple. It was designed on Phonegap 3.5 but it probably works on lower versions down to 3.0.
 
 ## Installation
 
 The plugin conforms to plugman standards so installation is easy:
 
-    $ cordova plugin add https://github.com/tenforwardconsulting/cloud-five-push-plugin.git
+    $ cordova plugin add https://github.com/cloudfive/push-cordova-plugin.git
 
 To register/activate push notifications all you need to do is put this in your javascript:
 
     CloudFivePush.register();
 
-This will register the user anonymously which is useful if you only need to send occasionally "broadcast" messages to your entire userbase.  If you want to send messages to individual users, you can specify an identifier, i.e. something like an e-mail address, user id or some other way your application identifies users.  Then you can target those individual users. 
+This will register the user anonymously which is useful if you only need to send occasionally "broadcast" messages to your entire userbase.  If you want to send messages to individual users, you can specify an identifier, i.e. something like an e-mail address, user id or some other way your application identifies users.  Then you can target those individual users.
 
     CloudFivePush.register('user-identifer');
 
 If you are sending custom/arbitrary payloads, you should register a callback for when the user acknowledges your notification:
-   
+
     CloudFivePush.onPushActivated(function(payload) {
         // This will receive the payload specified in the push message
     });
@@ -26,8 +26,8 @@ If you are sending custom/arbitrary payloads, you should register a callback for
 
 ## Removal
 
-To remove this plugin, simply execute 
-    
+To remove this plugin, simply execute
+
     $ cordova plugin remove com.cloudfiveapp.push
 
 
@@ -35,7 +35,7 @@ To remove this plugin, simply execute
 
 ## Setup for Android
 
-This best reference for instructions are here: http://developer.android.com/google/gcm/gs.html  Briefly, the steps are: 
+This best reference for instructions are here: http://developer.android.com/google/gcm/gs.html  Briefly, the steps are:
 
   * Open the Google Developers Console. - https://cloud.google.com/console
 

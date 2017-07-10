@@ -1,0 +1,14 @@
+{
+  "name": "push-cordova-plugin",
+  "version": "1.0.0",
+  "description": "Cloud Five plugin for Cordova",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cloudfive/push-cordova-plugin.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cloudfive/push-cordova-plugin/issues"
+  },
+  "homepage": "https://github.com/cloudfive/push-cordova-plugin#readme"
+}

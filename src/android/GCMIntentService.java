@@ -21,6 +21,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -100,10 +101,11 @@ public class GCMIntentService extends GCMBaseIntentService {
       // if we are in the foreground, just surface the payload
       if (CloudFivePush.isInForeground()) {
         extras.putBoolean("foreground", true);
-        CloudFivePush.sendExtras(extras);
       } else {
         extras.putBoolean("foreground", false);
       }
+      CloudFivePush.sendExtras(extras);
+      
       //Post the notification if it contains an alert key
       if (alert != null) {
           createNotification(context, extras);
@@ -111,7 +113,7 @@ public class GCMIntentService extends GCMBaseIntentService {
     }
   }
 
-  public void createNotification(Context context, Bundle extras)
+  @SuppressLint("NewApi") public void createNotification(Context context, Bundle extras)
   {
     NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
     String appName = getAppName(this);

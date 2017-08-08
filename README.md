@@ -33,6 +33,23 @@ To remove this plugin, simply execute
 
 ## Setup for Apple
 
+### Background Notifications
+
+If you push a notification having ```content-available: 1``` and configure your app to use ```UIBackgroundModes: "location"```, your app will awaken to receive a push notifiction in the background.  iOS will provide your app exactly 30s of background-running.  In your ```#onPushReceived``` callback, you must execute the ```#finish``` method to signal to the native plugin that your background-running is complete so the plugin can gracefully kill the background-thread before 30s expires.  If you don't, ios will kill your app.
+
+```
+CloudFivePush.onPushReceived(function(payload) {
+  // A push notification has arrived.  Let's talk to our server about something.
+  $.get({
+    url: 'my/server',
+    success: function() {
+      CloudFivePush.finish();   // <-- Signal to plugin that your background-running is complete.
+    }
+  });
+});
+```
+
+
 ## Setup for Android
 
 This best reference for instructions are here: http://developer.android.com/google/gcm/gs.html  Briefly, the steps are: 
